@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <title>Devlink Formattr</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+    <script>
+        const DEVLINK_TITLES = [
+            'OneDrive for Business',
+            'ODB OnPrem',
+            'SPList Next',
+            'VideoPortalEmbedPlayer',
+            'SiteHub',
+            'OneDrive for Consumer',
+            'OneDrive Picker',
+            'OneDrive Embed',
+            'CreateSite',
+            'MicroService Share'
+        ];
+
+        /**
+         * Parses the input.
+         */
+        function parseInput(input) {
+            const lines = input.split('\n');
+            const entries = [];
+
+            let currentEntry = {};
+            lines.forEach(function(line) {
+                if (isNewEntry(line)) {
+                    // Store currentEntry if anything has been set.
+                    if (currentEntry.title) {
+                        entries.push(currentEntry);
+                    }
+
+                    // Replace stored entry with a new one.
+                    currentEntry = {
+                        title: line,
+                        devlink: ''
+                    };
+                } else {
+                    currentEntry.devlink += line;
+                }
+            }, this);
+
+            // Get the last entry.
+            if (currentEntry.title) {
+                entries.push(currentEntry);
+            }
+
+            // Sort entries (based on title).
+            entries.sort(sortEntries);
+
+            return entries;
+        }
+
+        /**
+         * Sets the value of the output textarea.
+         */
+        function setOutput(entries) {
+            const outputTextarea = document.getElementById('outputTextarea');
+
+            // Show an error if there are no entries.
+            if (!entries.length) {
+                outputTextarea.value = 'There was an issue parsing the input.';
+                return;
+            }
+
+            let outputText = '';
+
+            entries.forEach(function(entry) {
+                outputText += entry.title;
+                outputText += '\n';
+                outputText += entry.devlink;
+                outputText += '\n\n';
+            }, this);
+
+            outputTextarea.value = outputText;
+        }
+
+        /**
+         * Determines if the current line is the start of a new entry.
+         */
+        function isNewEntry(line) {
+            let _isNewEntry = false;
+
+            DEVLINK_TITLES.forEach(function(title) {
+                if (line.indexOf(title) > -1) {
+                    _isNewEntry = true;
+                }
+            }, this);
+
+            return _isNewEntry;
+        }
+
+        /**
+         * Sorts the entries array based on title.
+         */
+        function sortEntries(a, b) {
+            if (a.title < b.title) {
+                return -1;
+            } else if (a.title > b.title) {
+                return 1;
+            } else {
+                return 0;
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', function () {
+            const inputTextarea = document.getElementById('inputTextarea');
+            const outputTextarea = document.getElementById('outputTextarea');
+
+            // Sets up an event listener to parse input on paste.
+            inputTextarea.addEventListener('keyup', function(event) {
+                const input = inputTextarea.value;
+
+                if (!input) {
+                    outputTextarea.value = '';
+                } else {
+                    setOutput(parseInput(input));
+                }
+            });
+
+            // Sets up an event listener to copy output on click.
+            outputTextarea.addEventListener('click', function () {
+                outputTextarea.select();
+                document.execCommand('copy');
+            });
+        });
+    </script>
+
+    <div class="container">
+        <textarea id="inputTextarea" class="myTextarea" placeholder="Paste gulp deploy output here (example below).
+
+OneDrive for Business (MSIT):
+https://contoso.sharepoint.com/teams/playground/cookieredirect/redirect.aspx?mobile=0&setCookie=https%3A
+%2F%2Fresourceseng.blob.core.windows.net%2Ffiles%2Fdev-joem-joem-devc--users-joem-code-repo-app-min-joem%2F
+app-stuff-change%2F
+OneDrive for Business (SPDF):
+https://contoso-my.sharepoint-df.com/personal/bob_contoso_com/cyrusplayground/cookieredirect/redirect.a
+spx?mobile=0&setCookie=https%3A%2F%2Fresourceseng.blob.core.windows.net%2Ffiles%2Fdev-joem-joem-devc--users-joe
+m-code-next2-app-min-joem%2Fapp-stuff-change%2F"></textarea>
+        <textarea id="outputTextarea" class="myTextarea" readonly placeholder="When the input is valid, the output will be put here."></textarea>
+    </div>
+
+</body>
+
+</html>
