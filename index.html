@@ -10,6 +10,7 @@
 
 <body>
     <script>
+        // Don't change the order!
         const DEVLINK_TITLES = [
             'OneDrive for Business',
             'ODB OnPrem',
@@ -31,6 +32,7 @@
             const entries = [];
 
             let currentEntry = {};
+            let isWarning = false;
             lines.forEach(function(line) {
                 if (isNewEntry(line)) {
                     // Store currentEntry if anything has been set.
@@ -43,8 +45,16 @@
                         title: line,
                         devlink: ''
                     };
+
+                    // Remove warning state.
+                    isWarning = false;
                 } else {
-                    currentEntry.devlink += line;
+                    // Watch out for warning lines in the output!
+                    if (line.indexOf('warning:') === -1 && !isWarning) {
+                        currentEntry.devlink += line;
+                    } else {
+                        isWarning = true;
+                    }
                 }
             }, this);
 
@@ -56,7 +66,35 @@
             // Sort entries (based on title).
             entries.sort(sortEntries);
 
-            return entries;
+            // Filter entries based on checkboxes.
+            return filterEntries(entries);
+        }
+
+        function filterEntries(entries) {
+            const includeOdc = document.getElementById('odc').checked;
+            const includeOdb = document.getElementById('odb').checked;
+            const includeSts = document.getElementById('sts').checked;
+            const includeShare = document.getElementById('share').checked;
+
+            const filterTitles = [];
+            includeOdc ? filterTitles.push(DEVLINK_TITLES[4]) : undefined;
+            includeOdb ? filterTitles.push(DEVLINK_TITLES[0]) : undefined;
+            includeSts ? filterTitles.push(DEVLINK_TITLES[2]) : undefined;
+            includeShare ? filterTitles.push(DEVLINK_TITLES[9]) : undefined;
+
+            const filteredEntries = [];
+            entries.forEach(function(entry) {
+                let include = false;
+                filterTitles.forEach(function(title) {
+                    if (entry.title.indexOf(title) > -1 && entry.title.indexOf('OnPrem') === -1) {
+                        include = true;
+                    }
+                }, this);
+
+                include ? filteredEntries.push(entry) : undefined;
+            }, this);
+
+            return filteredEntries;
         }
 
         /**
@@ -111,6 +149,10 @@
             }
         }
 
+        /**
+         * Sets default values of checkboxes (from localStorage), and sets
+         * up event listeners to listen to changes.
+         */
         function initializeCheckboxes() {
             const odcCheckbox = document.getElementById('odc');
             const odbCheckbox = document.getElementById('odb');
@@ -123,16 +165,27 @@
                 const currentKey = `checkbox${checkbox.id}`;
                 const currentValue = localStorage.getItem(currentKey);
                 if (currentValue === null) {
-                    localStorage.setItem(currentKey, false);
+                    localStorage.setItem(currentKey, 'true');
                 } else {
                     checkbox.checked = currentValue === 'true';
                 }
 
                 // Adds event listeners to checkboxes to save changes.
                 checkbox.addEventListener('change', function(event) {
+                    // Save changes to localStorage.
                     const id = event.id;
                     const newValue = event.target.checked;
                     localStorage.setItem(`checkbox${event.target.id}`, newValue);
+
+                    // Re-parse input with new checkbox settings.
+                    const inputTextarea = document.getElementById('inputTextarea');
+                    const input = inputTextarea.value;
+
+                    if (!input) {
+                        outputTextarea.value = '';
+                    } else {
+                        setOutput(parseInput(input));
+                    }
                 });
             }, this);
         }
@@ -150,12 +203,6 @@
                 } else {
                     setOutput(parseInput(input));
                 }
-            });
-
-            // Sets up an event listener to copy output on click.
-            outputTextarea.addEventListener('click', function () {
-                outputTextarea.select();
-                document.execCommand('copy');
             });
 
             initializeCheckboxes();
@@ -178,7 +225,7 @@
         </div>
         <div>
             <input type="checkbox" id="share" name="share" value="share">
-            <label for="share">Microservice Share</label>
+            <label for="share">MicroService Share</label>
         </div>
     </fieldset>
 
