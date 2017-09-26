@@ -111,6 +111,32 @@
             }
         }
 
+        function initializeCheckboxes() {
+            const odcCheckbox = document.getElementById('odc');
+            const odbCheckbox = document.getElementById('odb');
+            const stsCheckbox = document.getElementById('sts');
+            const shareCheckbox = document.getElementById('share');
+            const checkboxes = [odcCheckbox, odbCheckbox, stsCheckbox, shareCheckbox];
+
+            checkboxes.forEach(function(checkbox) {
+                // Sets default value of checkbox, based on localStorage.
+                const currentKey = `checkbox${checkbox.id}`;
+                const currentValue = localStorage.getItem(currentKey);
+                if (currentValue === null) {
+                    localStorage.setItem(currentKey, false);
+                } else {
+                    checkbox.checked = currentValue === 'true';
+                }
+
+                // Adds event listeners to checkboxes to save changes.
+                checkbox.addEventListener('change', function(event) {
+                    const id = event.id;
+                    const newValue = event.target.checked;
+                    localStorage.setItem(`checkbox${event.target.id}`, newValue);
+                });
+            }, this);
+        }
+
         document.addEventListener('DOMContentLoaded', function () {
             const inputTextarea = document.getElementById('inputTextarea');
             const outputTextarea = document.getElementById('outputTextarea');
@@ -131,8 +157,30 @@
                 outputTextarea.select();
                 document.execCommand('copy');
             });
+
+            initializeCheckboxes();
         });
     </script>
+
+    <fieldset class="myFieldset">
+        <legend>Which links do you want?</legend>
+        <div>
+            <input type="checkbox" id="odc" name="odc" value="odc">
+            <label for="odc">ODC</label>
+        </div>
+        <div>
+            <input type="checkbox" id="odb" name="odb" value="odb">
+            <label for="odb">ODB</label>
+        </div>
+        <div>
+            <input type="checkbox" id="sts" name="sts" value="sts">
+            <label for="sts">STS</label>
+        </div>
+        <div>
+            <input type="checkbox" id="share" name="share" value="share">
+            <label for="share">Microservice Share</label>
+        </div>
+    </fieldset>
 
     <div class="container">
         <textarea id="inputTextarea" class="myTextarea" placeholder="Paste 'gulp deploy' output here (example below).
