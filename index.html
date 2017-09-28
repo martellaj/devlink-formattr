@@ -110,14 +110,26 @@
             }
 
             let outputText = '';
+            let testTenantSnippet = '';
 
             entries.forEach(function(entry) {
+                if (entry.title.indexOf('OneDrive for Business (MSIT)') > -1) {
+                    const linkParts = entry.devlink.split('setCookie=');
+                    const resourceLocation = linkParts[1];
+
+                    testTenantSnippet += 'Snippet for test tenants:';
+                    testTenantSnippet += '\n';
+                    testTenantSnippet += `document.cookie="srr=" + decodeURIComponent("${resourceLocation}")`;
+                    testTenantSnippet += '\n\n';
+                }
+
                 outputText += entry.title;
                 outputText += '\n';
                 outputText += entry.devlink;
                 outputText += '\n\n';
             }, this);
 
+            outputText += testTenantSnippet;
             outputTextarea.value = outputText;
         }
 
